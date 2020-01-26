@@ -1,2 +1,2 @@
 # hdw
-Hierarchical Deterministic hardened derived wallet implementation
+Hierarchical Deterministic hardened derivation wallet implementation
