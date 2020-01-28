@@ -20,7 +20,7 @@ def generate_entropy(bits=256):
         raise EntropyRangeExceeded
 
     entropybits = bin(int.from_bytes(os.urandom(bits // 8), byteorder=sys.byteorder))[2:]
-    return len(fill_bits(entropybits, bits))
+    return fill_bits(entropybits, bits)
 
 
 # returns the sha256 hash of the given input
@@ -29,10 +29,9 @@ def sha256(_input):
 
 
 # returns the checksum of the input hash
-# checksum is given by entropy length / 32
+# checksum is given by the first (entropy length / 32)
+# characters of the sha256 hash applied on entropy bits
 def get_checksum(_entropy):
     entropy_length = len(_entropy) // 32
     return sha256(_entropy)[:entropy_length]
 
-
-print(generate_entropy(256))
