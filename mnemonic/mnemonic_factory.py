@@ -41,14 +41,41 @@ def get_checksum(_entropy):
 # prints and returns the mnemonic phrase
 def get_mnemonics(entropy):
     checksum = get_checksum(entropy)
+    # append the checksum bits to the initial entropy
     entcs = entropy + checksum[:len(entropy) // 32]
-    bitlist = [entcs[i:i+11] for i in range(0, len(entcs), 11)]
+    # separate the entropy+checksum into chunks of 11 bits
+    bitchunks = [entcs[i:i+11] for i in range(0, len(entcs), 11)]
     wordlist = []
     with open("wordlist", 'r') as wl:
         wlines = wl.readlines()
-        for i in bitlist:
-            wordlist.append(wlines[int(i, 2)].split("\n")[0])
+        for chunk in bitchunks:
+            # map each 11 bits to a word
+            wordlist.append(wlines[int(chunk, 2)].split("\n")[0])
 
-    wordlist = " ".join(wordlist)
-    print(wordlist)
     return wordlist
+
+
+# map the mnemonic phrase to the word list
+# and retrieve the genesis key
+def revert_mnemonic(words):
+    indexes = []
+    with open("wordlist", 'r') as wl:
+        lines = wl.readlines()
+        for w in words:
+            for iline in range(0, len(lines)):
+                if w == lines[iline].replace("\n", ""):
+                    indexes.append(iline)
+                    break
+    bits = []
+    for i in indexes:
+        bits.append(fill_bits(bin(i)[2:], 11))
+
+    return "".join(bits)
+
+
+def get_seed(mnemonic, passphrase, b=False):
+    passphrase = "mnemonic" + passphrase
+    _seed = hashlib.pbkdf2_hmac("sha512", bytes(mnemonic, 'utf-8'),
+                                bytes(passphrase, 'utf-8'), 2048)
+
+    return _seed if b else hex(int.from_bytes(_seed, byteorder=sys.byteorder))

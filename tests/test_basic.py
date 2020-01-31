@@ -1,5 +1,9 @@
 import pytest
-from ..mnemonic import mnemonic_factory
+import string
+from mnemonic import mnemonic_factory
+
+def get_string(s):
+    return string.printable + s + string.printable
 
 def test_n1():
     x = 5
@@ -24,9 +28,16 @@ def test_mnemonic_checksum():
 
 
 def test_mnemonic_sentence():
-    pass
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=128)) == 12
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=160)) == 15
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=192)) == 18
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=224)) == 21
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=256)) == 24
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(128))) == 12
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(160))) == 15
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(192))) == 18
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(224))) == 21
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(256))) == 24
+
+
+def test_mnemonic_reversal():
+    ENT = mnemonic_factory.generate_entropy(128)
+    CS = mnemonic_factory.get_checksum(ENT)
+    MN = mnemonic_factory.get_mnemonics(ENT)
+    CMN = mnemonic_factory.revert_mnemonic(MN)
+    assert CMN == ENT+CS
