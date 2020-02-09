@@ -1,9 +1,5 @@
 import pytest
-import string
 from mnemonic import mnemonic_factory
-
-def get_string(s):
-    return string.printable + s + string.printable
 
 
 def test_n1():

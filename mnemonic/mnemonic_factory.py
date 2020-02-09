@@ -46,7 +46,7 @@ def get_mnemonics(entropy):
     # separate the entropy+checksum into chunks of 11 bits
     bitchunks = [entcs[i:i+11] for i in range(0, len(entcs), 11)]
     wordlist = []
-    with open("wordlist", 'r') as wl:
+    with open("mnemonic/wordlist", 'r') as wl:
         wlines = wl.readlines()
         for chunk in bitchunks:
             # map each 11 bits to a word
@@ -59,7 +59,7 @@ def get_mnemonics(entropy):
 # and retrieve the genesis key
 def revert_mnemonic(words):
     indexes = []
-    with open("wordlist", 'r') as wl:
+    with open("mnemonic/wordlist", 'r') as wl:
         lines = wl.readlines()
         for w in words:
             for iline in range(0, len(lines)):
