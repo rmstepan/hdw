@@ -34,4 +34,3 @@ def sha256(_input):
 def get_checksum(_entropy):
     entropy_length = len(_entropy) // 32
     return sha256(_entropy)[:entropy_length]
-

@@ -1,6 +1,7 @@
 import pytest
 from ..mnemonic import mnemonic_factory
 
+
 def test_n1():
     x = 5
     y = 6
