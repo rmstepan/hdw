@@ -41,3 +41,10 @@ def test_mnemonic_reversal():
     MN = mnemonic_factory.get_mnemonics(ENT)
     CMN = mnemonic_factory.revert_mnemonic(MN)
     assert CMN == ENT+CS
+
+
+def test_seed_length():
+    entropy = mnemonic_factory.generate_entropy()
+    mnemonic = mnemonic_factory.get_mnemonics(entropy)
+    bin_seed = mnemonic_factory.get_seed(mnemonic, binary=True)
+    assert len(bin_seed) == 512
