@@ -73,9 +73,13 @@ def revert_mnemonic(words):
     return "".join(bits)
 
 
-def get_seed(mnemonic, passphrase, b=False):
-    passphrase = "mnemonic" + passphrase
+# stretch the mnemonic to a 512 bit seed through PBKDF2 function
+def get_seed(mnemonic, passphrase=None, binary=False):
+    if type(mnemonic) is list:
+        mnemonic = " ".join(mnemonic)
+    passphrase = "mnemonic" + passphrase if passphrase else ""
     _seed = hashlib.pbkdf2_hmac("sha512", bytes(mnemonic, 'utf-8'),
                                 bytes(passphrase, 'utf-8'), 2048)
 
-    return _seed if b else hex(int.from_bytes(_seed, byteorder=sys.byteorder))
+    return fill_bits(bin(int.from_bytes(_seed, byteorder=sys.byteorder))[2:], 512) if binary else \
+        hex(int.from_bytes(_seed, byteorder=sys.byteorder))[2:]
