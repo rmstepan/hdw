@@ -13,7 +13,8 @@ def test_entropy_generator():
 
 
 def test_sha256_length():
-    assert len(mnemonic_factory.sha256("test")) == 64
+    entropy = mnemonic_factory.generate_entropy(256)
+    assert len(mnemonic_factory.sha256(entropy)) == 64
 
 
 def test_mnemonic_checksum():
