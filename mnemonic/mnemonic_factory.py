@@ -7,6 +7,46 @@ class EntropyRangeExceeded(Exception):
     pass
 
 
+MAINNET_XPRV = b"\x04\x88\xad\xe4"  # mainnet private key serialization
+MAINNET_XPUB = b"\x04\x88\xb2\x1e"  # mainnet public key serialization
+TESTNET_XPRV = b"\x04\x35\x83\x94"  # testnet private key serialization
+TESTNET_XPUB = b"\x04\x35\x87\xcf"  # testnet public key serialization
+
+
+##
+# check if input string is binary or not
+# return true or false
+def is_binary(string):
+    p = set(string)
+    s = {'0', '1'}
+
+    if s == p or p == {'0'} or p == {'1'}:
+        return True
+    else:
+        return False
+
+
+##
+# convert given string to base 58 encoding
+# base 58 - I and l discarded to avoid confusion
+# return b58 encoded string
+def b58encode(v):
+    alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+
+    p, acc = 1, 0
+    for c in reversed(v):
+        if sys.version < "3":
+            c = ord(c)
+        acc += p * c
+        p = p << 8
+
+    string = ""
+    while acc:
+        acc, idx = divmod(acc, 58)
+        string = alphabet[idx: idx + 1] + string
+    return string
+
+
 # fill the remaining bits with 0's
 def fill_bits(binary, bits):
     if len(binary) < bits:
@@ -14,8 +54,11 @@ def fill_bits(binary, bits):
     return binary
 
 
+##
 # generate a given number of entropy bits using CSPRNG from /dev/urandom
 def generate_entropy(bits=256):
+    if bits % 32 != 0:
+        raise ValueError("Strength must be a multiple of 32")
     if bits < 128 or bits > 256:
         raise EntropyRangeExceeded
 
