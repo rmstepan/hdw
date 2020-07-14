@@ -6,6 +6,44 @@ import ecdsa
 from ecdsa.ecdsa import generator_secp256k1
 
 
+class HDNode:
+    def __init__(self, xpriv, xpub, priv, pub, chain_code, parent=None):
+        self.xpriv = xpriv
+        self.xpub = xpub
+        self.priv = priv
+        self.pub = pub
+        self.chain_code = chain_code
+        self.parent = parent
+        self.address = 0
+        self.descendants = []
+        self._calc_address()
+
+    def __iter__(self):
+        for descendant in self.descendants:
+            yield descendant
+
+    def add_descendant(self, node):
+        self.descendants.append(node)
+
+    def _calc_address(self):
+        # sha256 public key
+        sha = hashlib.sha256(self.pub).digest()
+
+        # ripemd160(sha256(pub))
+        hash160 = hashlib.new("ripemd160")
+        hash160.update(sha)
+        # add version byte in front of hash - 0x00 for mainnet version
+        hash160 = b"\x00" + hash160.digest()
+
+        # sha256d the previous hash160 to get the 4 byte checksum
+        sha = hashlib.sha256(hash160).digest()
+        checksum = hashlib.sha256(sha).digest()[:4]
+
+        hash160 = hash160 + checksum
+
+        self.address = b58encode(hash160)
+
+
 class EntropyRangeExceeded(Exception):
     pass
 
@@ -271,3 +309,56 @@ def derive_child(parent_priv, parent_pub, parent_chain_code, hardened=False, dep
     extended_pub += hashed_xpub[:4]
 
     return (b58encode(extended_priv), b58encode(extended_pub)), (child_private_key, child_public_key, child_chain_code)
+
+
+##
+# create derivation path
+def derive_path(master_code, path=None):
+    nodes = []
+    m = HDNode(xpriv=master_code[0][0], xpub=master_code[0][1], priv=master_code[1][0], pub=master_code[1][1],
+               chain_code=master_code[1][2])
+
+    print("[+] Master node m")
+    print("[!] Bitcoin master private key extended:         {}".format(m.xpriv))
+    print("[!] Bitcoin master public key extended:          {}".format(m.xpub))
+    print("[!] Bitcoin master code chain:                   {}".format(m.chain_code))
+    print("")
+
+    nodes.append(m)
+    derivation_list = path.split("/")
+
+    if "M" == derivation_list[0] or "m" == derivation_list[0]:
+        pass
+    else:
+        raise ValueError("Wrong derivation path!")
+
+    for inode in range(1, len(derivation_list)):
+        depth = inode
+        is_hardened = True if derivation_list[inode].endswith("'") else False
+
+        if depth == 1:
+            parent = m
+
+        if is_hardened:
+            index = pow(2, 31) + int(derivation_list[inode].split("'")[0])
+            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub, parent_chain_code=parent.chain_code,
+                                 hardened=True, depth=depth, index=index)
+        else:
+            index = int(derivation_list[inode])
+            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub, parent_chain_code=parent.chain_code,
+                                 hardened=False, depth=depth, index=index)
+
+        cnode = HDNode(xpriv=cnode[0][0], xpub=cnode[0][1], priv=cnode[1][0], pub=cnode[1][1],
+                       chain_code=cnode[1][2], parent=parent)
+        parent.add_descendant(cnode)
+
+        parent = cnode
+
+        print("[+] {}".format('/'.join(derivation_list[:inode+1])))
+        print("[!] Bitcoin private key extended:         {}".format(cnode.xpriv))
+        print("[!] Bitcoin public key extended:          {}".format(cnode.xpub))
+        print("[!] Bitcoin code chain:                   {}".format(cnode.chain_code))
+        print("[!] Bitcoin address:                      {}".format(cnode.address))
+        print("")
+
+    return m
