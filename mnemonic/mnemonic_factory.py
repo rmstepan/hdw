@@ -133,7 +133,7 @@ def get_mnemonics(entropy):
     # append the checksum bits to the initial entropy
     entcs = entropy + checksum[:len(entropy) // 32]
     # separate the entropy+checksum into chunks of 11 bits
-    bitchunks = [entcs[i:i+11] for i in range(0, len(entcs), 11)]
+    bitchunks = [entcs[i:i + 11] for i in range(0, len(entcs), 11)]
     wordlist = []
     with open("mnemonic/wordlist", 'r') as wl:
         wlines = wl.readlines()
@@ -255,20 +255,23 @@ def derive_child(parent_priv, parent_pub, parent_chain_code, hardened=False, dep
     il = data[:32]
 
     # build child private key -> parent private key + IL (scalar addition) (mod n)
-    child_private_key = int.from_bytes(parent_priv, byteorder="big") + int.from_bytes(il, byteorder="big")
+    child_private_key = int.from_bytes(parent_priv, byteorder="big") + \
+        int.from_bytes(il, byteorder="big")
+
     child_private_key = child_private_key % generator_secp256k1.order()
     child_private_key = int.to_bytes(child_private_key, length=32, byteorder="big")
 
     # build child public key from SECP256k1 curve
     # compress the pubkey to 33 bytes
-    # y point is discarded and replaced with 0x02 for evenness or 0x03 for oddness -> the header byte
+    # y point is discarded and replaced with 0x02 for evenness or 0x03 for oddness ->
+    #       the header byte
     privkey_obj = ecdsa.SigningKey.from_string(child_private_key, curve=ecdsa.SECP256k1)
     pubkey_obj = privkey_obj.get_verifying_key().to_string("compressed")
     child_public_key = pubkey_obj
 
     #####################################################################################
     # Extend child private key
-    extended_priv = MAINNET_XPRV                             # add version - 4 bytes
+    extended_priv = MAINNET_XPRV  # add version - 4 bytes
     extended_priv += int.to_bytes(depth, length=1, byteorder="big")  # add depth - 1 byte
     extended_priv += int.to_bytes(index, length=4, byteorder="big")  # add index - 4 bytes
 
@@ -289,7 +292,7 @@ def derive_child(parent_priv, parent_pub, parent_chain_code, hardened=False, dep
 
     #######################################################################################
     # Extend child public key
-    extended_pub = MAINNET_XPUB     # add version - 4 bytes
+    extended_pub = MAINNET_XPUB  # add version - 4 bytes
     extended_pub += int.to_bytes(depth, length=1, byteorder="big")  # add depth - 1 byte
     extended_pub += int.to_bytes(index, length=4, byteorder="big")  # add index - 4 bytes
 
@@ -308,15 +311,16 @@ def derive_child(parent_priv, parent_pub, parent_chain_code, hardened=False, dep
 
     extended_pub += hashed_xpub[:4]
 
-    return (b58encode(extended_priv), b58encode(extended_pub)), (child_private_key, child_public_key, child_chain_code)
+    return (b58encode(extended_priv), b58encode(extended_pub)),\
+           (child_private_key, child_public_key, child_chain_code)
 
 
 ##
 # create derivation path
 def derive_path(master_code, path=None):
     nodes = []
-    m = HDNode(xpriv=master_code[0][0], xpub=master_code[0][1], priv=master_code[1][0], pub=master_code[1][1],
-               chain_code=master_code[1][2])
+    m = HDNode(xpriv=master_code[0][0], xpub=master_code[0][1], priv=master_code[1][0],
+               pub=master_code[1][1], chain_code=master_code[1][2])
 
     print("[+] Master node m")
     print("[!] Bitcoin master private key extended:         {}".format(m.xpriv))
@@ -341,12 +345,14 @@ def derive_path(master_code, path=None):
 
         if is_hardened:
             index = pow(2, 31) + int(derivation_list[inode].split("'")[0])
-            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub, parent_chain_code=parent.chain_code,
-                                 hardened=True, depth=depth, index=index)
+            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub,
+                                 parent_chain_code=parent.chain_code, hardened=True,
+                                 depth=depth, index=index)
         else:
             index = int(derivation_list[inode])
-            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub, parent_chain_code=parent.chain_code,
-                                 hardened=False, depth=depth, index=index)
+            cnode = derive_child(parent_priv=parent.priv, parent_pub=parent.pub,
+                                 parent_chain_code=parent.chain_code, hardened=False,
+                                 depth=depth, index=index)
 
         cnode = HDNode(xpriv=cnode[0][0], xpub=cnode[0][1], priv=cnode[1][0], pub=cnode[1][1],
                        chain_code=cnode[1][2], parent=parent)
@@ -354,7 +360,7 @@ def derive_path(master_code, path=None):
 
         parent = cnode
 
-        print("[+] {}".format('/'.join(derivation_list[:inode+1])))
+        print("[+] {}".format('/'.join(derivation_list[:inode + 1])))
         print("[!] Bitcoin private key extended:         {}".format(cnode.xpriv))
         print("[!] Bitcoin public key extended:          {}".format(cnode.xpub))
         print("[!] Bitcoin code chain:                   {}".format(cnode.chain_code))
