@@ -47,6 +47,7 @@ def b58encode(v):
     return string
 
 
+##
 # fill the remaining bits with 0's
 def fill_bits(binary, bits):
     if len(binary) < bits:
@@ -66,12 +67,14 @@ def generate_entropy(bits=256):
     return fill_bits(entropy_bits, bits)
 
 
+##
 # returns the sha256 hash of the given input
 def sha256(_input):
     ent_bytes = int(_input, 2).to_bytes(len(_input) // 8, byteorder='big')
     return hashlib.sha256(ent_bytes).hexdigest()
 
 
+##
 # returns the checksum of the input hash
 # checksum is given by the first (entropy length / 32)
 # bits of the sha256 hash applied on entropy bits
@@ -80,6 +83,7 @@ def get_checksum(_entropy):
     return bin(int(sha256(_entropy), 16))[2:].zfill(256)[:entropy_length]
 
 
+##
 # separate the entropy+checksum bits in chunks of 11 bits
 # and map them to the word list to get english words
 # prints and returns the mnemonic phrase
@@ -89,9 +93,6 @@ def get_mnemonics(entropy):
     entcs = entropy + checksum[:len(entropy) // 32]
     # separate the entropy+checksum into chunks of 11 bits
     bitchunks = [entcs[i:i+11] for i in range(0, len(entcs), 11)]
-    print("Entropy: {}".format(entropy))
-    print("Entcs:   {}".format(entcs))
-    print(bitchunks)
     wordlist = []
     with open("mnemonic/wordlist", 'r') as wl:
         wlines = wl.readlines()
@@ -102,6 +103,7 @@ def get_mnemonics(entropy):
     return wordlist
 
 
+##
 # map the mnemonic phrase to the word list
 # and retrieve the genesis key
 def revert_mnemonic(words):
@@ -120,11 +122,12 @@ def revert_mnemonic(words):
     return "".join(bits)
 
 
+##
 # stretch the mnemonic to a 512 bit seed through PBKDF2 function
 def get_seed(mnemonic, passphrase=None, binary=False):
     if type(mnemonic) is list:
         mnemonic = " ".join(mnemonic)
-    passphrase = "mnemonic" + passphrase if passphrase else ""
+    passphrase = "mnemonic" + passphrase if passphrase else "mnemonic"
     _seed = hashlib.pbkdf2_hmac("sha512", bytes(mnemonic, 'utf-8'),
                                 bytes(passphrase, 'utf-8'), 2048)
 
