@@ -1,5 +1,5 @@
 import pytest
-from ..mnemonic import mnemonic_factory
+from mnemonic import mnemonic_factory
 
 
 def test_n1():
@@ -13,7 +13,8 @@ def test_entropy_generator():
 
 
 def test_sha256_length():
-    assert len(mnemonic_factory.sha256("test")) == 64
+    entropy = mnemonic_factory.generate_entropy(256)
+    assert len(mnemonic_factory.sha256(entropy)) == 64
 
 
 def test_mnemonic_checksum():
@@ -25,9 +26,23 @@ def test_mnemonic_checksum():
 
 
 def test_mnemonic_sentence():
-    pass
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=128)) == 12
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=160)) == 15
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=192)) == 18
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=224)) == 21
-    # assert len(mnemonic_factory.get_mnemonics(entropy_bits=256)) == 24
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(128))) == 12
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(160))) == 15
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(192))) == 18
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(224))) == 21
+    assert len(mnemonic_factory.get_mnemonics(mnemonic_factory.generate_entropy(256))) == 24
+
+
+def test_mnemonic_reversal():
+    ENT = mnemonic_factory.generate_entropy(128)
+    CS = mnemonic_factory.get_checksum(ENT)
+    MN = mnemonic_factory.get_mnemonics(ENT)
+    CMN = mnemonic_factory.revert_mnemonic(MN)
+    assert CMN == ENT+CS
+
+
+def test_seed_length():
+    entropy = mnemonic_factory.generate_entropy()
+    mnemonic = mnemonic_factory.get_mnemonics(entropy)
+    bin_seed = mnemonic_factory.get_seed(mnemonic, binary=True)
+    assert len(bin_seed) == 512
